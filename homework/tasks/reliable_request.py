@@ -1,5 +1,5 @@
 import abc
-
+import asyncio
 import httpx
 
 
@@ -20,11 +20,18 @@ async def do_reliable_request(url: str, observer: ResultsObserver) -> None:
     """
 
     async with httpx.AsyncClient() as client:
-        # YOUR CODE GOES HERE
-        response = await client.get(url)
-        response.raise_for_status()
-        data = response.read()
+        max_retries = 5
+        delay_between_retries = 1
 
-        observer.observe(data)
-        return
-        #####################
+        async with httpx.AsyncClient() as client:
+            for attempt in range(1, max_retries + 1):
+                try:
+                    response = await client.get(url, timeout=10)
+                    response.raise_for_status()
+                    data = response.content
+                    observer.observe(data)
+                    return
+                except (httpx.RequestError, httpx.HTTPStatusError):
+                    if attempt == max_retries:
+                        raise
+                    await asyncio.sleep(delay_between_retries)
