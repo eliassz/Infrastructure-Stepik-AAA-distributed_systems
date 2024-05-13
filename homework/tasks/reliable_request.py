@@ -31,7 +31,7 @@ async def do_reliable_request(url: str, observer: ResultsObserver) -> None:
                     data = response.content
                     observer.observe(data)
                     return
-                except (httpx.RequestError, httpx.HTTPStatusError) as exc:
+                except (httpx.RequestError, httpx.HTTPStatusError):
                     if attempt == max_retries:
                         raise
                     await asyncio.sleep(delay_between_retries)
